@@ -46,5 +46,3 @@ npm run dev
 - **Semantic Matching**: Leverages `all-MiniLM-L6-v2` for high-precision skill similarity.
 - **Response Time**: <2s for end-to-end analysis.
 
-## 📄 License
-MIT

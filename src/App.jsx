@@ -4,16 +4,22 @@ import './index.css';
 function App() {
   const [resume, setResume] = useState(null);
   const [jd, setJD] = useState(null);
+  const [jdText, setJDText] = useState("");
+  const [jdInputType, setJDInputType] = useState("file"); // 'file' or 'text'
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const handleAnalyze = async () => {
-    if (!resume || !jd) return;
+    if (!resume || (jdInputType === 'file' && !jd) || (jdInputType === 'text' && !jdText)) return;
     setLoading(true);
 
     const formData = new FormData();
     formData.append('resume', resume);
-    formData.append('jd', jd);
+    if (jdInputType === 'file') {
+      formData.append('jd', jd);
+    } else {
+      formData.append('jd_text', jdText);
+    }
 
     try {
       const response = await fetch('http://localhost:8000/analyze', {
@@ -47,19 +53,43 @@ function App() {
         </div>
 
         <div className="upload-card">
-          <h3>Job Description</h3>
-          <p>{jd ? jd.name : 'Upload target JD (PDF)'}</p>
-          <label className="file-label">
-            Choose File
-            <input type="file" accept=".pdf" onChange={(e) => setJD(e.target.files[0])} />
-          </label>
+          <div className="card-header-flex">
+            <h3>Job Description</h3>
+            <div className="toggle-group">
+              <button 
+                className={`toggle-btn ${jdInputType === 'file' ? 'active' : ''}`}
+                onClick={() => setJDInputType('file')}
+              >PDF</button>
+              <button 
+                className={`toggle-btn ${jdInputType === 'text' ? 'active' : ''}`}
+                onClick={() => setJDInputType('text')}
+              >Text</button>
+            </div>
+          </div>
+          
+          {jdInputType === 'file' ? (
+            <>
+              <p>{jd ? jd.name : 'Upload target JD (PDF)'}</p>
+              <label className="file-label">
+                Choose File
+                <input type="file" accept=".pdf" onChange={(e) => setJD(e.target.files[0])} />
+              </label>
+            </>
+          ) : (
+            <textarea 
+              className="jd-textarea"
+              placeholder="Paste the job description here..."
+              value={jdText}
+              onChange={(e) => setJDText(e.target.value)}
+            />
+          )}
         </div>
       </section>
 
       <button 
         className="analyze-btn" 
         onClick={handleAnalyze} 
-        disabled={loading || !resume || !jd}
+        disabled={loading || !resume || (jdInputType === 'file' ? !jd : !jdText)}
       >
         {loading ? 'Analyzing...' : 'Generate Roadmap'}
       </button>

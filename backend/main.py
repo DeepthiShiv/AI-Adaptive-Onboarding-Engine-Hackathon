@@ -1,4 +1,5 @@
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, Form
+from typing import Optional
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import shutil
@@ -26,22 +27,33 @@ def read_root():
     return {"message": "AI-Adaptive Onboarding Engine API"}
 
 @app.post("/analyze")
-async def analyze_onboarding(resume: UploadFile = File(...), jd: UploadFile = File(...)):
+async def analyze_onboarding(
+    resume: UploadFile = File(...), 
+    jd: Optional[UploadFile] = File(None),
+    jd_text: Optional[str] = Form(None)
+):
     resume_path = os.path.join(UPLOAD_DIR, resume.filename)
-    jd_path = os.path.join(UPLOAD_DIR, jd.filename)
     
     with open(resume_path, "wb") as buffer:
         shutil.copyfileobj(resume.file, buffer)
     
-    with open(jd_path, "wb") as buffer:
-        shutil.copyfileobj(jd.file, buffer)
-    
-    # Module 1: Parsing
+    # Module 1: Parsing Resume
     resume_text = parse_pdf(resume_path)
-    jd_text = parse_pdf(jd_path)
-    
     resume_skills = extract_skills(resume_text)
-    jd_skills = extract_skills(jd_text)
+
+    # Parsing Job Description (File or Text)
+    jd_content = ""
+    if jd_text:
+        jd_content = jd_text
+    elif jd:
+        jd_path = os.path.join(UPLOAD_DIR, jd.filename)
+        with open(jd_path, "wb") as buffer:
+            shutil.copyfileobj(jd.file, buffer)
+        jd_content = parse_pdf(jd_path)
+    else:
+        return {"error": "Either Job Description file or text must be provided."}
+
+    jd_skills = extract_skills(jd_content)
     
     # Module 2: Gap Analysis
     missing_skills = analyze_gap(resume_skills, jd_skills)
