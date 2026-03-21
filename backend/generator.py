@@ -264,7 +264,11 @@ def generate_roadmap(missing_skills, resume_skills):
                     "topics": metadata.get("topics", ["Fundamentals", "Basic Syntax", "Practice Projects"]),
                     "time": metadata.get("time", "4-6 hours"),
                     "resources": metadata.get("resources", []),
-                    "interview_questions": metadata.get("interview_questions", [])
+                    "interview_questions": metadata.get("interview_questions", [
+                        f"What are the core fundamentals of {step}?",
+                        f"Explain a common challenge when working with {step} and how to solve it.",
+                        f"How does {step} compare to its closest alternatives?"
+                    ])
                 })
                 seen_in_path.add(step)
         
@@ -278,7 +282,11 @@ def generate_roadmap(missing_skills, resume_skills):
                 "topics": metadata.get("topics", ["Core Concepts", "Advanced Usage", "Implementation"]),
                 "time": metadata.get("time", "8-12 hours"),
                 "resources": metadata.get("resources", []),
-                "interview_questions": metadata.get("interview_questions", [])
+                "interview_questions": metadata.get("interview_questions", [
+                    f"Explain a complex project where you utilized {skill}.",
+                    f"What are the best practices for implementing {skill} in a production environment?",
+                    f"How would you optimize {skill} performance for scale?"
+                ])
             })
             seen_in_path.add(skill)
             

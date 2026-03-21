@@ -19,29 +19,94 @@ function App() {
     document.body.classList.toggle('light-theme');
   };
 
-  const handleExportPDF = async () => {
-    if (!resultsRef.current) return;
+  const handleExportPDF = () => {
     setIsExporting(true);
     try {
-      const element = resultsRef.current;
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: isLight ? '#f8fafc' : '#0f172a'
-      });
-      
-      const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('p', 'mm', 'a4');
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-      const imgWidth = canvas.width;
-      const imgHeight = canvas.height;
-      const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
-      const finalWidth = imgWidth * ratio;
-      const finalHeight = imgHeight * ratio;
-      
-      pdf.addImage(imgData, 'PNG', 0, 0, finalWidth, finalHeight);
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const margin = 20;
+      let y = 20;
+
+      // Title
+      pdf.setFontSize(22);
+      pdf.setTextColor(15, 23, 42); // slate-900
+      pdf.text("Learning Roadmap", margin, y);
+      y += 10;
+
+      // Score
+      pdf.setFontSize(14);
+      pdf.setTextColor(71, 85, 105); // slate-600
+      pdf.text(`Skill Match Score: ${results.match_score}%`, margin, y);
+      y += 15;
+
+      pdf.setFontSize(12);
+      results.roadmap.forEach((step, index) => {
+        // Check for page break
+        if (y > 270) {
+          pdf.addPage();
+          y = 20;
+        }
+
+        // Step Heading
+        pdf.setFont(undefined, 'bold');
+        pdf.setTextColor(30, 41, 59);
+        const title = `${index + 1}. ${step.skill} (${step.type})`;
+        pdf.text(title, margin, y);
+        y += 7;
+
+        // Description
+        pdf.setFont(undefined, 'normal');
+        pdf.setFontSize(10);
+        pdf.setTextColor(100, 116, 139);
+        const splitDesc = pdf.splitTextToSize(step.description, pageWidth - (margin * 2));
+        pdf.text(splitDesc, margin, y);
+        y += (splitDesc.length * 5) + 3;
+
+        // Topics
+        pdf.setFont(undefined, 'bold');
+        pdf.setTextColor(71, 85, 105);
+        pdf.text("Core Topics:", margin, y);
+        y += 5;
+        pdf.setFont(undefined, 'normal');
+        step.topics.forEach(topic => {
+          pdf.text(`• ${topic}`, margin + 5, y);
+          y += 5;
+        });
+        y += 3;
+
+        // Resources
+        if (step.resources && step.resources.length > 0) {
+          pdf.setFont(undefined, 'bold');
+          pdf.text("Resources:", margin, y);
+          y += 5;
+          pdf.setFont(undefined, 'normal');
+          pdf.setTextColor(37, 99, 235); // Blue for links
+          step.resources.forEach(res => {
+            pdf.text(`- ${res.name}: ${res.url}`, margin + 5, y);
+            y += 5;
+          });
+          pdf.setTextColor(100, 116, 139);
+        }
+
+        // Interview Questions
+        if (step.interview_questions && step.interview_questions.length > 0) {
+          y += 2;
+          pdf.setFont(undefined, 'bold');
+          pdf.setTextColor(225, 29, 72); // rose-600
+          pdf.text("Interview Prep:", margin, y);
+          y += 5;
+          pdf.setFont(undefined, 'normal');
+          pdf.setTextColor(100, 116, 139);
+          step.interview_questions.forEach(q => {
+            const splitQ = pdf.splitTextToSize(`? ${q}`, pageWidth - (margin * 2) - 5);
+            pdf.text(splitQ, margin + 5, y);
+            y += (splitQ.length * 5);
+          });
+        }
+
+        y += 10; // Space between steps
+      });
+
       pdf.save('onboarding-roadmap.pdf');
     } catch (error) {
       console.error("Error generating PDF:", error);
@@ -78,6 +143,12 @@ function App() {
 
   return (
     <div className={`app-container ${isLight ? 'light-theme' : ''}`}>
+      <div className="bg-orbs">
+        <div className="orb orb-1"></div>
+        <div className="orb orb-2"></div>
+        <div className="orb orb-3"></div>
+      </div>
+
       <div className="theme-toggle">
         <button className="theme-btn" onClick={toggleTheme} title="Toggle Theme">
           {isLight ? '🌙' : '☀️'}
