@@ -18,8 +18,11 @@ def get_nlp():
 SKILLS_DB = [
     "Python", "JavaScript", "React", "Node.js", "Express", "SQL", "NoSQL", "MongoDB",
     "Machine Learning", "Deep Learning", "NLP", "TensorFlow", "PyTorch", "AWS", "Azure",
-    "Docker", "Kubernetes", "Git", "REST API", "FastAPI", "Flask", "Django", "Pytorch",
-    "Java", "C++", "C#", "HTML", "CSS", "TypeScript", "Redux", "GraphQL"
+    "Docker", "Kubernetes", "Git", "REST API", "FastAPI", "Flask", "Django",
+    "Java", "C++", "C#", "HTML", "CSS", "TypeScript", "Redux", "GraphQL", "Cloud Computing",
+    "Networking", "Linux Basics", "HTTP Basics", "Next.js", "Vite", "Tailwind CSS",
+    "PostgreSQL", "MySQL", "Redis", "Kafka", "CI/CD", "Jenkins", "Terraform", "Ansible",
+    "Pandas", "NumPy", "Scikit-Learn", "Matplotlib", "Seaborn", "Tableau", "Power BI"
 ]
 
 def parse_pdf(file_path):

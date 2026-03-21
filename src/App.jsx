@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import './index.css';
 
 function App() {
@@ -8,6 +10,45 @@ function App() {
   const [jdInputType, setJDInputType] = useState("file"); // 'file' or 'text'
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [isLight, setIsLight] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const resultsRef = useRef(null);
+
+  const toggleTheme = () => {
+    setIsLight(!isLight);
+    document.body.classList.toggle('light-theme');
+  };
+
+  const handleExportPDF = async () => {
+    if (!resultsRef.current) return;
+    setIsExporting(true);
+    try {
+      const element = resultsRef.current;
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: isLight ? '#f8fafc' : '#0f172a'
+      });
+      
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
+      const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
+      const finalWidth = imgWidth * ratio;
+      const finalHeight = imgHeight * ratio;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, finalWidth, finalHeight);
+      pdf.save('onboarding-roadmap.pdf');
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const handleAnalyze = async () => {
     if (!resume || (jdInputType === 'file' && !jd) || (jdInputType === 'text' && !jdText)) return;
@@ -36,7 +77,13 @@ function App() {
   };
 
   return (
-    <div className="app-container">
+    <div className={`app-container ${isLight ? 'light-theme' : ''}`}>
+      <div className="theme-toggle">
+        <button className="theme-btn" onClick={toggleTheme} title="Toggle Theme">
+          {isLight ? '🌙' : '☀️'}
+        </button>
+      </div>
+
       <header>
         <h1>AI Adaptive Onboarding</h1>
         <p style={{ color: 'var(--text-muted)' }}>Analyze skill gaps and generate personalized learning roadmaps.</p>
@@ -95,7 +142,21 @@ function App() {
       </button>
 
       {results && (
-        <section className="results-section">
+        <section className="results-section" ref={resultsRef}>
+          <div className="score-dashboard">
+            <div className="score-circle">
+              {results.match_score}%
+            </div>
+            <div className="score-label">Skill Match Score</div>
+            <p style={{ marginTop: '1rem', color: 'var(--text-muted)' }}>
+              {results.match_score > 80 
+                ? "Excellent match! You're ready for most roles." 
+                : results.match_score > 50 
+                ? "Good progress. A few key skills will bridge the gap." 
+                : "Significant growth opportunity identified."}
+            </p>
+          </div>
+
           <div className="skills-grid">
             <div className="skill-list">
               <h3>Detected Skills</h3>
@@ -118,14 +179,77 @@ function App() {
           </div>
 
           <div className="roadmap-container">
+            <div className="actions-bar">
+              <button 
+                className="export-btn" 
+                onClick={handleExportPDF}
+                disabled={isExporting}
+              >
+                {isExporting ? '⏳ Generating...' : '📄 Export as PDF'}
+              </button>
+            </div>
+            
             <h2 style={{ marginBottom: '2rem' }}>Learning Roadmap</h2>
             {results.roadmap.length > 0 ? (
               results.roadmap.map((step, index) => (
                 <div key={index} className="roadmap-step">
                   <div className="step-circle">{index + 1}</div>
                   <div className="step-info">
-                    <h4>{step.skill}</h4>
-                    <p>{step.type} • {step.level} Level</p>
+                    <div className="step-header">
+                      <h4>{step.skill}</h4>
+                      <div className="badge-group">
+                        <span className={`badge ${step.type === 'Prerequisite' ? 'badge-prereq' : 'badge-target'}`}>
+                          {step.type}
+                        </span>
+                        <span className="badge badge-level">{step.level}</span>
+                      </div>
+                    </div>
+                    
+                    <p className="step-description">{step.description}</p>
+                    
+                    <div className="step-details">
+                      <div className="details-grid">
+                        <div className="detail-section">
+                          <h5>Core Topics</h5>
+                          <ul className="topic-list">
+                            {step.topics.map((topic, i) => (
+                              <li key={i}>{topic}</li>
+                            ))}
+                          </ul>
+                        </div>
+                        
+                        {step.resources && step.resources.length > 0 && (
+                          <div className="detail-section">
+                            <h5>Learning Resources</h5>
+                            <ul className="resource-list">
+                              {step.resources.map((res, i) => (
+                                <li key={i}>
+                                  <a href={res.url} target="_blank" rel="noopener noreferrer" className="resource-link">
+                                    {res.type === 'video' ? '📺 ' : '🔗 '}
+                                    {res.name}
+                                  </a>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="time-estimate">
+                        <span>⏱ Estimated: {step.time}</span>
+                      </div>
+
+                      {step.interview_questions && step.interview_questions.length > 0 && (
+                        <div className="interview-prep">
+                          <h5>🚀 Interview Preparation</h5>
+                          {step.interview_questions.map((q, i) => (
+                            <div key={i} className="question-card">
+                              {q}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))

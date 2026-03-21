@@ -61,11 +61,25 @@ async def analyze_onboarding(
     # Module 3: Roadmap Generation
     roadmap = generate_roadmap(missing_skills, resume_skills)
     
+    # Module 4: Match Score Calculation
+    total_required_skills = set(jd_skills)
+    missing_count = len(missing_skills)
+    total_count = len(total_required_skills)
+    
+    if total_count > 0:
+        matched_count = total_count - missing_count
+        match_score = int((matched_count / total_count) * 100)
+    else:
+        match_score = 0
+        
+    print(f"DEBUG: JD Skills: {jd_skills}, Missing: {missing_skills}, Score: {match_score}")
+    
     return {
         "resume_skills": resume_skills,
         "jd_skills": jd_skills,
         "skill_gap": missing_skills,
-        "roadmap": roadmap
+        "roadmap": roadmap,
+        "match_score": match_score
     }
 
 if __name__ == "__main__":
